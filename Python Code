@@ -1,0 +1,110 @@
+import requests
+import pandas as pd
+
+# Fetch earthquake data from the USGS API
+url = "https://earthquake.usgs.gov/fdsnws/event/1/query"
+params = {
+    "format": "geojson",
+    "starttime": "2023-01-01",
+    "endtime": "2023-12-31",
+    "minmagnitude": 4.0
+}
+
+response = requests.get(url, params=params)
+
+if response.status_code == 200:
+    earthquake_data = response.json()
+    print("Data fetched successfully!")
+else:
+    print(f"Error fetching data: {response.status_code}")
+----------------------------------------------------------------
+# Extract features
+features = earthquake_data['features']
+
+# Create a DataFrame
+earthquakes = pd.json_normalize(features)
+
+# Select relevant columns
+earthquakes = earthquakes[[
+    'properties.place', 
+    'properties.mag', 
+    'properties.time', 
+    'geometry.coordinates'
+]]
+
+# Rename columns for clarity
+earthquakes.columns = ['Location', 'Magnitude', 'Timestamp', 'Coordinates']
+
+# Convert timestamp to a readable format
+earthquakes['Timestamp'] = pd.to_datetime(earthquakes['Timestamp'], unit='ms')
+
+# Preview the data
+earthquakes.head()
+----------------------------------------------------------------
+# Validate data by viewing top 10 largest earthquakes
+top_10 = earthquakes.nlargest(10, 'Magnitude')
+print("Top 10 strongest earthquakes:")
+print(top_10[['Location', 'Magnitude', 'Timestamp']])
+----------------------------------------------------------------
+# Visualize data via distribution
+earthquakes['Magnitude Range'] = pd.cut(
+    earthquakes['Magnitude'], 
+    bins=[4, 5, 6, 7, 8, 10],
+    labels=['4-5', '5-6', '6-7', '7-8', '8+']
+)
+
+magnitude_counts = earthquakes['Magnitude Range'].value_counts()
+print("Number of earthquakes by magnitude range:")
+print(magnitude_counts)
+----------------------------------------------------------------
+import matplotlib.pyplot as plt
+import seaborn as sns
+
+plt.figure(figsize=(10, 6))
+sns.histplot(earthquakes['Magnitude'], bins=20, kde=True, color='blue')
+plt.title('Earthquake Magnitude Distribution')
+plt.xlabel('Magnitude')
+plt.ylabel('Frequency')
+plt.show()
+----------------------------------------------------------------
+import folium
+
+# Create a map centered around an average location
+earthquake_map = folium.Map(location=[0, 0], zoom_start=2)
+
+# Add earthquake markers
+for _, row in earthquakes.iterrows():
+    coords = row['Coordinates']
+    folium.Marker(
+        location=[coords[1], coords[0]],  # Latitude, Longitude
+        popup=f"Location: {row['Location']}<br>Magnitude: {row['Magnitude']}",
+        icon=folium.Icon(color='red' if row['Magnitude'] >= 6 else 'orange')
+    ).add_to(earthquake_map)
+
+earthquake_map.save("earthquake_map.html")
+----------------------------------------------------------------
+#!pip install schedule
+import schedule
+import time
+
+def earthquake_pipeline():
+    print("Running Earthquake Pipeline...")
+    # Add your pipeline steps here
+
+# Schedule the pipeline
+schedule.every(5).minutes.do(earthquake_pipeline)
+
+# Run the loop for 5 iterations
+iterations = 5
+while iterations > 0:
+    schedule.run_pending()
+    time.sleep(1)
+    iterations -= 1
+----------------------------------------------------------------
+# Save as `earthquake_pipeline.py`
+def earthquake_pipeline():
+    print("Running Earthquake Pipeline...")
+    # Add the complete pipeline steps here
+
+if __name__ == "__main__":
+    earthquake_pipeline()
