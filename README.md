@@ -6,4 +6,4 @@ This project builds a real-time data pipeline using the USGS Earthquake API. It 
 + Pandas
 + Matplotlib
 + API Integration
-+ Folium.
++ Folium
