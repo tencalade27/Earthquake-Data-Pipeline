@@ -5,8 +5,8 @@ import pandas as pd
 url = "https://earthquake.usgs.gov/fdsnws/event/1/query"
 params = {
     "format": "geojson",
-    "starttime": "2023-01-01",
-    "endtime": "2023-12-31",
+    "starttime": "2025-01-01",
+    "endtime": "2023-08-31",
     "minmagnitude": 4.0
 }
 
